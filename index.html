@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
+    <title>ちょっとちゃっとができるっちゃ(仮)</title>
+  </head>
+
+  <!-- 
+    【機能概要】
+        ・ユーザー設定画面でユーザー名とアイコンを設定。
+        ・設定したユーザー名とアイコンは保存される。
+        ・リロード後、ユーザ設定画面に保存されているユーザー設定がリロードされる。
+        ・設定中のユーザー名のチャットは左寄せ。それ以外は右寄せ。
+        ※ユーザー名変更後、画面をリロードしないと左右の位置が反映されない。
+
+    【画面構成】
+        ―――――――――――――――――――――――――――――
+
+        チャットエリア
+
+        ―――――――――――――――――――――――――――――
+
+        [メッセージ入力欄] [送信ボタン]
+
+        ―――――――――――――――――――――――――――――
+
+        [ユーザー設定ボタン]
+
+        ――――――――通常時は非表示――――――――
+
+        [ユーザ名入力欄]
+
+        [アイコン画像選択ラジオボックス]
+
+        [設定完了ボタン]
+
+        ―――――――――――――――――――――――――――――
+  -->
+
+  <body>
+    <div>
+      <!-- ページタイトル -->
+      <h1>ちょっとちゃっとができるっちゃ(仮)</h1>
+
+      <!-- チャットエリア -->
+      <div id="output" style="overflow:auto;"></div>
+
+      <!-- メッセージ入力エリア -->
+      <div class="text_send">
+        <input type="text" class="ef" id="text" placeholder="">
+        <label>メッセージ</label>
+        <span class="focus_line"></span>
+        <button id="send">送信</button>
+      </div>
+
+      <!-- ユーザー設定エリア -->
+      <input type="button" value="ユーザー設定" id="set_btn" class="btn btn-tag" onclick="document.getElementById('setting').style.visibility = 'visible'">
+      <div id="setting">
+        <div>
+          <p>ユーザー名</p>
+          <input type="text" id="uname">
+        </div>
+        <div class="icons">
+          <p>アイコン選択</p>
+          <ul class="image_list">
+            <li class="imgs" data-img="0">
+              <div class="image_box">
+                <img class="thumbnail" src="imgs/anpan.jpg">
+                <input class="disabled_radio" id="icon0" value="0" type="radio" name="icon"/>
+              </div>
+            </li>
+            <li class="imgs" data-img="1">
+              <div class="image_box">
+                <img class="thumbnail" src="imgs/syoku.jpg">
+                <input class="disabled_radio" id="icon1" type="radio" name="icon"/>
+              </div>
+            </li>
+            <li class="imgs" data-img="2">
+              <div class="image_box">
+                <img class="thumbnail" src="imgs/curry.jpg">
+                <input class="disabled_radio" id="icon2" type="radio" name="icon"/>
+              </div>
+            </li>
+            <li class="imgs" data-img="3">
+              <div class="image_box">
+                <img class="thumbnail" src="imgs/melon.jpg">
+                <input class="disabled_radio" id="icon3" type="radio" name="icon"/>
+              </div>
+            </li>
+            <li class="imgs" data-img="4">
+              <div class="image_box">
+                <img class="thumbnail" src="imgs/roll.jpg">
+                <input class="disabled_radio" id="icon4" type="radio" name="icon"/>
+              </div>
+            </li>
+            <li class="imgs" data-img="5">
+              <div class="image_box">
+                <img class="thumbnail" src="imgs/kama.jpg">
+                <input class="disabled_radio" id="icon5" value="15" type="radio" name="icon"/>
+              </div>
+            </li>
+            <li class="imgs" data-img="6">
+              <div class="image_box">
+                <img class="thumbnail" src="imgs/katsu.jpg">
+                <input class="disabled_radio" id="icon6" type="radio" name="icon"/>
+              </div>
+            </li>
+          </ul>
+          <input type="button" id="set_comp" class="btn btn-tag" value="設定完了" onclick="document.getElementById('setting').style.visibility = 'hidden';">
+        </div>
+      </div>
+    </div>
+
+    <!-- JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <!-- JQuery -->
+
+    <!--** 以下Firebase **-->
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase.js"></script>
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+        https://firebase.google.com/docs/web/setup#available-libraries -->
+
+    <script>
+      // Your web app's Firebase configuration
+        var firebaseConfig = {
+        };
+
+      // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const ref_y = firebase.database().ref('youser'); //.ref() は「ユニークキーを自動で振ってください」という意味。
+        const ref_m = firebase.database().ref('message'); //.ref() は「ユニークキーを自動で振ってください」という意味。
+
+      //日付データの定義作成
+        let now = new Date();                          //日付取得準備（必須）！！
+        let mon =("0"+(now.getMonth() + 1)).slice(-2); //月（2桁表示）
+        let date=("0"+now.getDate()).slice(-2);        //日（2桁表示）
+        let h   =("0"+now.getHours()).slice(-2);       //時（2桁表示）
+        let min =("0"+now.getMinutes()).slice(-2);     //分（2桁表示）
+        let t = mon + "/" + date + " " + + h + ":" + min ;//日時表示文字列の作成(その他の時間の表示に合わせる)
+
+      //アイコンの選択
+        let d=0;
+        const img=["anpan.jpg","syoku.jpg","curry.jpg","melon.jpg","roll.jpg","kama.jpg","katsu.jpg"];
+        $(".imgs").on("click",function(){
+          d=$(this).attr("data-img");
+        });
+
+      // ユーザー設定エリアの表示/非表示
+        document.getElementById('setting').style.visibility = 'hidden';
+
+      // ユーザ設定を保存
+        const youser = firebase.database().ref('youser');
+        $("#set_comp").on("click",function(){
+          const uname = $("#uname").val();
+          youser.set({
+            uname:uname,
+            icon:d
+          });
+        });
+
+      // ユーザー設定をロード
+        ref_y.on("child_added",function(data){
+          const val = data.val(); //送信されたオブジェクトを取得
+          const key = data.key;   //ユニークキーの取得
+          if(key=="icon"){
+            d=val;
+          }
+          if(key=="uname"){
+            $("#uname").val(val);
+          }
+          for(let i=0; i<7; i++){
+            if(d==i){
+              let icon_id = "icon"+i;
+              var element = document.getElementById(icon_id);
+              element.checked = true;
+            }
+          }
+        });
+
+      //送信動作の関数定義
+        function send(){
+          $('#output').animate({scrollTop: $('#output')[0].scrollHeight}); //自動的に一番下までスクロール
+          const uname = $("#uname").val();
+          const text  = $("#text").val();
+          const time = t;
+          const msg   = {
+              text:text,
+              time:time,
+              uname:uname,
+              icon:d
+          }
+          ref_m.push(msg);  //set は決まった名前で登録され、push はユニーク名で登録される。
+          document.getElementById("text").value = ""; //送信後にメッセージ欄をクリア
+        }
+
+      //文字を送信
+        $("#send").on("click",function(){
+            send(); //定義した関数を実行
+        });
+
+      //firebaseのデータを表示
+        ref_m.on("child_added",function(data){
+            $('#output').animate({scrollTop: $('#output')[0].scrollHeight}); //自動的に一番下までスクロール
+            const v = data.val(); //送信されたオブジェクトを取得
+            const k = data.key;   //ユニークキーの取得
+            const h = '<dl id="'+k+'"class="balloon_l"><dt id="text_name">'+v.uname+'&nbsp;&nbsp;'+v.time+'</dt><div class="text_message"><dt><img class="faceicon" src="imgs/'+img[v.icon]+'" width="40"></dt><dt class="says"><p>'+v.text+'<p></dt></div></dl>';
+            $("#output").append(h);
+            if(v.uname!=[uname.value]){
+              var element = document.getElementById(k);
+              element.className = "balloon_r";
+            }
+        });
+
+      //エンターキーで送信動作
+        $("#text").on("keydown",function(e){
+              // console.log(e); を使うことでどのキーが押されたのかコンソール内で知ることができる。
+              if(e.keyCode==13){  //キーコード13はエンターキー
+                  send();         //定義した関数を実行
+              }
+        });
+    </script>
+  </body>
+</html>
